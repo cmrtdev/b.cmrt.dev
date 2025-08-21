@@ -16,7 +16,7 @@ buildExpired = false
 disableXML = true
 minifyOutput = true
 
-# params:
+[params]
 #   env: production # to enable google analytics, opengraph, twitter-cards and schema.
 #   title: ExampleSite
 #   description: "ExampleSite description"
@@ -32,7 +32,7 @@ minifyOutput = true
 #   ShowShareButtons: true
 #   ShowPostNavLinks: true
 #   ShowBreadCrumbs: true
-#   ShowCodeCopyButtons: false
+ShowCodeCopyButtons = true
 #   ShowWordCount: true
 #   ShowRssButtonInSectionTermList: true
 #   UseHugoToc: true
