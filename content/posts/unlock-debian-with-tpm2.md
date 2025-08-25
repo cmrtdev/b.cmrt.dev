@@ -1,21 +1,26 @@
 +++
 date = '2025-08-22T01:27:04+02:00'
-draft = true
+draft = false
 title = 'TPM2 auto-unlock of a LUKS-encrypted laptop running Debian'
 +++
-Today I'm going to try to make my Debian laptop's LUKS encrypted drive auto-unlock with TPM2.
+For a while now I wanted to make my Debian laptop's LUKS encrypted drive auto-unlock with TPM2.
 
-In and out, 20 minute adventure.
+Today is the day I try to do that: in and out, 20 minute adventure.
 
 ## tl;dr
 
-If you're impatient and don't want to know the hell I had to go through:
+If you're impatient and don't want to know what I had to go through:
 
-* Install `dracut` and `tpm2-tools` (the latter is why this post is so long. If it doesn't work, read through, you may be missing some Dracut modules.)
-* `echo 'install_optional_items+=" /usr/lib64/libtss2* /usr/lib64/libfido2.so.* "' | sudo tee -a /etc/dracut.conf.d/tss2.conf`
+* Install `dracut` and `tpm2-tools`
+  * My initial lack of `tpm2-tools` is why this post is so long. If it doesn't work, read through: you may be missing some Dracut modules.
+
+* ```bash
+  echo 'install_optional_items+=" /usr/lib64/libtss2* /usr/lib64/libfido2.so.* "' | sudo tee -a /etc/dracut.conf.d/tss2.conf
+  ```
+
 * Add `tpm2-device=auto` in `/etc/crypttab` (on your root partition's line) between `luks` and `discard` (looks like `luks,tpm2-device=auto,discard`)
-* Run `dracut -f` and make sure the run doesn't show an error about `tpm2-tss` (or any other error, really)
-* Run `systemd-cryptenroll --wipe-slot tpm2 --tpm2-device auto --tpm2-pcrs "1+7+11+14" /dev/YOUR_DEVICE` (replace `YOUR_DEVICE` with the same, root one as above)
+* Run `dracut -f` and make sure you don't see an error about `tpm2-tss` (or any other error, really)
+* Run `systemd-cryptenroll --wipe-slot tpm2 --tpm2-device auto --tpm2-pcrs "1+7+11+14" /dev/YOUR_DEVICE` (replace `YOUR_DEVICE` with the same root device as above)
 * `reboot`
 
 ## Step 1: Dracut
@@ -45,7 +50,7 @@ _It doesn't work._
 
 ## Step 2: /etc/crypttab
 
-Right, I forgot to tell the system that we want to unlock with TPM2.
+Right, I forgot to tell the system that we want it to unlock with TPM2.
 
 Let's edit `/etc/crypttab` and change this line (my root device is `/dev/nvme0n1p3`)
 
@@ -102,7 +107,7 @@ Dracut fails to load the `tpm2-tss` module, which seems kind of important for TP
 dracut[E]: Module 'systemd-cryptsetup' depends on module 'tpm2-tss', which can't be installed
 ```
 
-In my defense though: **why did it complete building the `initramfs`?!**
+I did ask myself, though: **why did it complete building the `initramfs`?!**
 
 I believe I can be excused for thinking that - at the very least - it was going to ask me for my password if it failed to auto-unlock?
 
@@ -130,11 +135,11 @@ I installed both, I regenerated the `initramfs`, it gave the same error, but bec
 
 ## Step 5: More debugging
 
-The Debian packages website for `forky` (`testing`, which is the version of Debian I am running) [tells me](https://packages.debian.org/search?searchon=contents&keywords=tpm2-tss&mode=path&suite=testing&arch=any) that the only `tpm2-tss` mention is in `libtss2-doc`, which I don't have.
+The Debian packages website for `forky` (currently `testing`, the version of Debian I am running) [tells me](https://packages.debian.org/search?searchon=contents&keywords=tpm2-tss&mode=path&suite=testing&arch=any) that the only `tpm2-tss` mention it can find is in `libtss2-doc`, which I don't have.
 
 I installed it, but it (obviously) still didn't work[^duh].
 
-Then I figured out[^rtfm] by inspecting the list of available Dracut modules using `dracut --list-modules`, that our "missing" `tpm2-tss` module is actually available to Dracut:
+I then figured out[^rtfm], by inspecting the list of available Dracut modules using `dracut --list-modules`, that our "missing" `tpm2-tss` module is actually available to Dracut:
 
 ```text
 # dracut --list-modules | grep tpm2
@@ -142,7 +147,9 @@ dracut[I]: Executing: /usr/bin/dracut --list-modules
 tpm2-tss
 ```
 
-but that for some reason when I regenerate the `initramfs` it fails to load it. I decided to try and reinstall `dracut`, but it did not help
+but that for some reason when I regenerate the `initramfs` it fails to load it.
+
+I decided to try and reinstall Dracut, but it did not help
 
 ```text
 # apt-get --reinstall install dracut
@@ -429,7 +436,8 @@ Mission complete :)
 
 I still need to figure out
 
-1. if my PCR combination will annoy me next time I have a kernel update (which, coincidentally, is _now_, or at least once I have a decent internet connection)
+1. if my PCR combination will annoy me next time I have a kernel update (which, coincidentally, is _now_, or at least once I have a decent internet connection) - **Update: it did not!**
+
 1. if this warrants a bug against `dracut` in Debian (to have a `Depends` or a `Recommends` on `tpm2-tools`)
 1. if this was the result of a combination of all the things I tried, or it was really just about `tpm2-tools`
 
