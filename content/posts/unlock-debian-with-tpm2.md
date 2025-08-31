@@ -76,7 +76,7 @@ While the earlier reboot actually asked me for a password (it didn't even try th
 
 In hindsight, I should've paid more attention to the error that showed up when I ran
 
-```text
+```console
 # dracut -f
 dracut[I]: Executing: /usr/bin/dracut -f
 dracut[E]: Module 'systemd-cryptsetup' depends on module 'tpm2-tss', which can't be installed
@@ -141,7 +141,7 @@ I installed it, but it (obviously) still didn't work[^duh].
 
 I then figured out[^rtfm], by inspecting the list of available Dracut modules using `dracut --list-modules`, that our "missing" `tpm2-tss` module is actually available to Dracut:
 
-```text
+```console
 # dracut --list-modules | grep tpm2
 dracut[I]: Executing: /usr/bin/dracut --list-modules
 tpm2-tss
@@ -151,7 +151,7 @@ but that for some reason when I regenerate the `initramfs` it fails to load it.
 
 I decided to try and reinstall Dracut, but it did not help
 
-```text
+```console
 # apt-get --reinstall install dracut
 Reading package lists... Done
 Building dependency tree... Done
@@ -230,7 +230,7 @@ So I decided to make sure I had them available in my system:
 
 Checking for missing libraries with `apt-cache policy` I find out that I'm missing `libtss2-fapi1t64`
 
-```text
+```console
 $ apt-cache policy libtss2-esys-3.0.2-0t64 libtss2-fapi1t64 libtss2-mu-4.0.1-0t64 libtss2-rc0t64 libtss2-sys1t64 libtss2-tcti-cmd0t64 libtss2-tcti-device0t64 libtss2-tcti-mssim0t64 libtss2-tcti-swtpm0t64 libtss2-tctildr0t64 libcryptsetup12 systemd-cryptsetup libcurl4t64 libjson-c5 | grep -B 1 Installed
 libtss2-esys-3.0.2-0t64:
   Installed: 4.1.3-1.2
@@ -281,7 +281,7 @@ but even after installing it, `dracut` is still returning the same error.
 
 One thing I noticed on Debian Packages about the many `libtss2-*` libraries above is that they also appear in `libtss2-dev`, which I don't have
 
-```text
+```console
 # apt-cache policy libtss2-dev
 libtss2-dev:
   Installed: (none)
@@ -293,7 +293,7 @@ libtss2-dev:
 
 While in theory I shouldn't need it (it's a `-dev` library, not a runtime one), maybe installing it will also pull in missing dependencies that I don't know I need?
 
-```text
+```console
 # apt-get install libtss2-dev
 Reading package lists... Done
 Building dependency tree... Done
@@ -337,7 +337,7 @@ install_optional_items+=" /usr/lib64/libtss2* /usr/lib64/libfido2.so.* "
 
 and yet
 
-```text
+```console
 $ sudo dracut -f
 dracut[I]: Executing: /usr/bin/dracut -f
 dracut[E]: Module 'systemd-cryptsetup' depends on module 'tpm2-tss', which can't be installed
@@ -347,7 +347,7 @@ dracut[E]: Module 'systemd-cryptsetup' depends on module 'tpm2-tss', which can't
 
 A comment below warns that this does not work on Fedora 36 because of some issues with the `tpm2-tools` package, that I don't have.
 
-```text
+```console
 # apt-cache policy tpm2-tools
 tpm2-tools:
   Installed: (none)
@@ -359,7 +359,7 @@ tpm2-tools:
 
 Might as well try, right?
 
-```text
+```console
 # apt-cache policy tpm2-tools
 tpm2-tools:
   Installed: (none)
@@ -416,7 +416,7 @@ dracut[I]: *** Moving image file '/boot/initrd.img-6.12.35+deb13-amd64.tmp' to '
 
 Let's check that we don't have a problem with the enrollment
 
-```text
+```console
 # systemd-cryptenroll --wipe-slot tpm2 --tpm2-device auto --tpm2-pcrs "1+7+11+14" /dev/nvme0n1p3 
 🔐 Please enter current passphrase for disk /dev/nvme0n1p3: [REDACTED]
 This PCR set is already enrolled, executing no operation.
@@ -424,8 +424,8 @@ This PCR set is already enrolled, executing no operation.
 
 then
 
-```text
-# reboot
+```bash
+reboot
 ```
 
 And without touching my keyboard I am brought back to the login screen.

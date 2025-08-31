@@ -44,8 +44,9 @@ ShowCodeCopyButtons = true
 #   showtoc: false
 #   tocopen: false
 
-[assets]
-# disableHLJS: true # to disable highlight.js
+[params.assets]
+# to disable highlight.js
+disableHLJS = true
 # disableFingerprinting: true
 favicon = '/favicon.ico'
 favicon16x16 = '/favicon-16x16.png'
@@ -129,13 +130,14 @@ safari_pinned_tab = '/safari-pinned-tab.png'
 #       name: example.org
 #       url: https://example.org
 #       weight: 30
-# # Read: https://github.com/adityatelange/hugo-PaperMod/wiki/FAQs#using-hugos-syntax-highlighter-chroma
-# pygmentsUseClasses: true
-# markup:
-#   highlight:
-#     noClasses: false
-#     # anchorLineNos: true
-#     # codeFences: true
-#     # guessSyntax: true
-#     # lineNos: true
-#     # style: monokai
+
+[markup]
+[markup.highlight]
+codeFences = true
+guessSyntax = true
+lineNos = false
+style = "monokai"
+#noClasses = false
+#anchorLineNos = true
+# Read: https://github.com/adityatelange/hugo-PaperMod/wiki/FAQs#using-hugos-syntax-highlighter-chroma
+pygmentsUseClasses = true
