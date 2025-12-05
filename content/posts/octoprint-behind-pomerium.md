@@ -1,6 +1,6 @@
 +++
 date = '2025-12-05T22:36:27+01:00'
-draft = true
+draft = false
 title = 'Hiding Octoprint behind Pomerium and dealing with WebSockets'
 +++
 
