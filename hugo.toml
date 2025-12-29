@@ -1,7 +1,7 @@
 baseURL = 'https://b.cmrt.dev/'
 languageCode = 'en-gb'
 title = 'How to fail at brevity'
-theme = 'PaperMod'
+theme = ['PaperMod', 'hugo-admonitions']
 
 enableRobotsTXT = true
 buildDrafts = false
@@ -137,13 +137,12 @@ codeFences = true
 guessSyntax = true
 lineNos = false
 style = "monokai"
+pygmentsUseClasses = true
 #noClasses = false
 #anchorLineNos = true
 # Read: https://github.com/adityatelange/hugo-PaperMod/wiki/FAQs#using-hugos-syntax-highlighter-chroma
-pygmentsUseClasses = true
 
 [sitemap]
-  changeFreq = ''
   disable = false
   filename = 'sitemap.xml'
   priority = -1
