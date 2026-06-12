@@ -1,12 +1,16 @@
 baseURL = 'https://b.cmrt.dev/'
-locale = 'en-GB'
 title = 'How to fail at brevity'
+defaultContentLanguage = 'en-GB'
 theme = ['PaperMod', 'hugo-admonitions']
 
 buildDrafts = false
 buildFuture = false
 buildExpired = false
 enableRobotsTXT = true
+
+[languages]
+  [languages.en-GB]
+    locale = 'en-GB'
 
 [caches]
   [caches.images]
