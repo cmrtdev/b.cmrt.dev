@@ -1,6 +1,5 @@
 +++
 date = '2026-06-02T23:42:46+02:00'
-draft = true
 title = 'How to bifurcate a PCI Express x16 slot (and lose your sanity in the process)'
 +++
 
