@@ -8,7 +8,7 @@ A few months ago I found myself in a bit of a predicament: my virtualized TrueNA
 
 Of course, this happened only at the most convenient of times: when I was not home, in another country, in a hurry, etc.
 
-My only solution, other than the good old "yank the power", was to ssh into the host and, well, yank the power, but different[^sysrq]:
+My only solution, other than the good old "yank the power", was to `ssh` into the host and, well, yank the power, but different[^sysrq]
 
 ```bash
 echo 's' > /proc/sysrq-trigger
@@ -19,7 +19,7 @@ echo 'b' > /proc/sysrq-trigger
 
 and then wait, praying to The Homelab Gods that the server would reboot and at least my network and bastion host would come back online.
 
-This was, for lack of a better word, _suboptimal_, but I couldn't really figure out what was happening, especially since the drives[^drives] were fine according to S.M.A.R.T. and everything else I could see, and I had PCI-E passthrough-ed them to TrueNAS to make sure TrueNAS had full control of them, so I (finally) started looking into it.
+This was, for lack of a better word, _suboptimal_, but I couldn't really figure out what was happening, especially since the drives[^drives] were fine according to S.M.A.R.T. and everything else I could see. I was careful and had PCI-E passthrough-ed them to TrueNAS to make sure TrueNAS had full control of them, so I (finally) started looking into it.
 
 ## PEBKAC
 
@@ -27,19 +27,19 @@ This was, for lack of a better word, _suboptimal_, but I couldn't really figure 
 
 I'll spare you the details, dear reader, but remember when, about two sentences ago I said this?
 
-> [..] and I had PCI-E passthrough-ed them to TrueNAS to make sure TrueNAS had full control of them
+> [..] I was careful and had PCI-E passthrough-ed them to TrueNAS to make sure TrueNAS had full control of them
 
-Well, if your drives are attached to the motherboard, then you did NOT, in fact, passed them through: what I did was follow [this guide](https://pve.proxmox.com/wiki/Passthrough_Physical_Disk_to_Virtual_Machine_(VM)) from the Proxmox Wiki that, despite being called "Passthrough Physical Disk to Virtual Machine (VM)" does **not** pass the _hardware_ through, but - effectively[^kindasorta] creates a `virtio` "drive" representing the entire drive, and attaches it to the machine.
+Well, if your drives are attached to the motherboard, then you did NOT, in fact, pass them through: what I did was follow [this guide](https://pve.proxmox.com/wiki/Passthrough_Physical_Disk_to_Virtual_Machine_(VM)) from the Proxmox Wiki that, despite being called "Passthrough Physical Disk to Virtual Machine (VM)" does **not** pass the _hardware_ through, but effectively[^kindasorta] creates a `virtio` "drive" representing the entire drive, and attaches it to the machine.
 
-Crucially, however, **this does not pass the drive controller to the VM**, while Proxmox (via `virtio`) still acts as an "intermediary".
+Crucially, however, **this does not pass the drive controller to the VM**, and Proxmox (via `virtio`) still acts as an "intermediary".
 
-Now, a smarter person (a.k.a. someone with eyes and at least two brain cells) would've realized that something was off by looking at the "Storage > Disks" menu in TrueNAS, which clearly stated "Virtio device" (or something similar); and I did see that, but (see "missing brain cells" above) did not realize its implications.
+Now, a smarter person (a.k.a. someone with eyes and at least two brain cells) would've realized that something was off by looking at the `Storage > Disks` menu in TrueNAS, which clearly stated "Virtio device" (or something similar); and I did see that, but (see "missing brain cells" above) did not realize its implications.
 
 ### What have I done?
 
 So, what had I actually done? Well, `virtio` is, by and large, a pretty amazing piece of software; but it's software nonetheless, and - worse - it's _generic_ software, which means it's not really capable of handling everything that the multitude of drive types it supports can do.
 
-I don't know exactly what the issue is, I never figured that out, but what I do know is that - somewhere in the 6-to-8-weeks-ago realm, the crashes started getting more frequent, happening probably twice a week during nightly Proxmox backups[^hint], and I started to become more and more unnerved, so I decided to look into it a little more.
+I don't know exactly what the issue is, I never figured that out, but what I do know is that - somewhere in the ~6-to-8-weeks-ago~ 10-to-12-weeks-ago realm, the crashes started getting more frequent, happening probably twice a week during nightly Proxmox backups[^hint], and I started to become more and more unnerved, so I decided to look into it a little more.
 
 It took a relatively small amount of searching for the narrator standing above my shoulder to utter the very famous quote[^fuckedup]
 
@@ -87,31 +87,120 @@ Some thinking and research[^rtfm] later, I have a plan:
 
 * Put the GPU in `PCI_E3`: I'm not passing it through to any VM anyway
 * Put a bifurcation adapter in `PCI_E1` and plug both cards in
-* Enable x8x8 bifurcation in the BIOS
+* Enable `x8x8` bifurcation in the BIOS
 * Passthrough the HBA to TrueNAS
 * Profit!
 
 So off I go to AliExpress to find a `PCIe bifurcation riser`, order it, and wait.
 
-### Where does the square peg go? In the square hole!
+### Where does the square peg go? In the square hole
 
-As I'm impatiently waiting for everything to get delivered I make a sudden realization:
+As I'm impatiently waiting for everything to get delivered I have a sudden realization:
 
-* I bought a 90 degrees bifurcation adapter
-* That plugs in horizontally, and the cards go vertically
-* My case is a [Fractal Define R5](https://www.fractal-design.com/products/cases/define/define-r5/)
-* It does not have vertical holes for PCIe cards
-* And even if it did, I can't reach them
+* I bought a 90 degrees bifurcation adapter...
+* ... that plugs in horizontally, so the cards become _vertically installed_.
+* My case is a [Fractal Define R5](https://www.fractal-design.com/products/cases/define/define-r5/)...
+* ... that does not have vertical holes for PCIe cards...
+* ... and even if it did, I can't reach them.
 
-The solution: riser cables! I can go from the two slots to each PCIe!
+The solution: **riser cables**! I can go from the two slots to each PCIe!
 
-Actually, I can buy a single x16 riser cable and go from the motherboard to the bifurcation riser, then slot the cards one above the other.
+Actually: a single x16 riser cable that goes from the motherboard to the bifurcation riser, so I can then slot the cards one above the other.
 
 I see absolutely **no way** this plan can go wrong!
 
 ### Physics, you heartless bitch
 
+It went wrong.
 
+You see, the issue with a riser cable and a bifurcation adapter, especially when your case does not have any vertical slots, and you still have a GPU in the way, is that if you need access to the card's back (because, for example, one of them is a NIC...) you still need a way for the cables to poke through the case.
+
+Because of the riser and the adapter, the card doesn't insert into the motherboard anymore, but it inserts a good 8cm/3in _away_ from it. And the PCI express brackets that came with the card, very obviously, are designed to have holes (mounting ones, and poking-through-the-back ones) in the regular places cards go (near the motherboard), not in exotic configurations that some rando cooked up because they had a hyper specific issue that should've been solved literally any other way.
+
+In graphical form, what I have with regular brackets is this (as seen from the back of the case):
+
+```text
+MB         Case
+||          |
+||-+--+-----| <- LSI
+||-+OO+-----| <- Mellanox
+||          |
+```
+
+and what I need is this
+
+```text
+MB  Riser  Case
+||  |       |
+||--|-+--+--| <- LSI
+||--|-+OO+--| <- Mellanox
+||          |
+```
+
+Where `+` is the place the card screws into the bracket, and `O` the holes in the back of said bracket.
+
+I assume you can see the problem: the size of the case is immutable, and brackets still need to span the whole width of it.
+
+To make a very long story short (I started writing this post a month ago and I'm still not done): I got my calipers out, added a dash of Fusion 360 (not sponsored) and came up with this
+
+> [!INFO] LSI Bracket
+> {{< modelviewer alt="A 3D model of a custom LSI 9207-8i bracket." src="glb/lsi.glb" orbit="50deg 70deg">}}
+
+and thi
+
+> [!INFO] Mellanox Bracket
+> {{< modelviewer alt="A 3D model of a custom Mellanox ConnectX-3 bracket." src="glb/mellanox.glb"  orbit="50deg 70deg">}}
+
+The mounting holes (and cable holes, in the case of the Mellanox) are much closer to the "flap" than they are in the original brackets, and farther from the "pointy side" (the one that sneaks behind the motherboard).
+
+To be clear: designing these took **a long time**. I'm ok at CAD but I'm not an expert, so the version numbers of the brackets you're seeing here are... In the double digits...
+
+They're also **not** the final versions: I had to edit them to comply with requirements from the manufacturer (keep reading), and they're also **customized** for the cards I have (they're branded cards, not the standard versions), so no I won't share the CAD files, because I don't want to have to deal with "why doesn't it fit!?" questions, sorry.
+
+Regardless, I 3D printed them and test fit them, and to my surprise they worked pretty well!
+
+But plastic, especially PLA (which is the only one available to me at the moment), won't stand up to the temperatures these cards may end up seeing, so after some thinking, I decided to use JLC CNC's "Sheet Metal" production (again, not sponsored) to get them made in something more durable and less prone to melting: stainless steel :)
+
+Things I learned in this process are:
+
+* JLC has a queue for sheet metal fabrication, and it fills up **fast**.
+  * You need to submit your order pretty much at the exact time they tell you the queue is opening, or you won't make it.
+* They also have fairly strict requirements on bends and holes (look it up), and they won't "risk it" even if you ask them nicely.
+  * This meant I had to remove some holes near the screw bends, and completely eliminate the big side bend. I did those myself, after delivery, with pliers and a vise.
+* Shipping can be more expensive than production, depending on how fast you need something, and where you live.
+
+But hey, ~14 USD and a `$cheapest_shipping_option` amount of days later, I had four brackets (I ordered two of each, just in case), did my bends (they're horrible, and I understand why they refused to do them). The holes lined up perfectly (measure twice, something something), and I now have some very stable cards in a configuration they were definitely never intended to be in! :D
+
+With that done, I finally switched the drives to the HBA, and I lived happily ever... Wait.
+
+### About that temperature thing
+
+So after a few days keeping an eye on TrueNAS, I started seeing some strange errors about the HBA resetting. I did some searching, and it was suggested that it could be because the card was getting too hot, so I set out to figure out if that was the case.
+
+Did you know that with cheap LSI cards TrueNAS default utilities can't figure out the card's temperature?
+
+Well, I didn't, but - as always - TrueNAS forums [came to the rescue](https://forums.truenas.com/t/how-to-read-lsi-sas-2308-hba-temperature-in-scale/6183/8): thanks to `driveburner`  I downloaded a random binary off the internet (don't do it, kids) and ran a modified version of their script
+
+```bash
+#!/bin/sh
+hextemp=$(/path/to/lsiutil -p1 -a 25,2,0,0 | grep "IOCTemperature:"|awk '{ print $2 }')
+echo "Hex: ${hextemp}"
+striptemp=$(echo $hextemp | sed -E 's/^0x[0]{0,}//')
+dectemp=$((16#$striptemp))
+echo "Controller temperature: ${dectemp} C"
+```
+
+Which informed me that the temperature of my card was
+
+```text
+$ sudo bash lsi_temp.sh
+Hex: 0x0068
+Controller temperature: 104 C
+```
+
+Ah. _Oops_.
+
+Thankfully I had a [Noctua NF-A40x10 PWM](https://www.noctua.at/en/products/nf-a4x10-pwm) lying around. One hastily printed _Fan bracket for LSI 9207-8i[^bracket]_ later, the temperature of the controller was a much healthier 68°C, and has stayed like that ever since.
 
 ## Appendix
 
@@ -129,6 +218,7 @@ To use an HBA in `IR` mode with TrueNAS I'd have had to reflash it to `IT` mode,
 [^hint]: <https://en.wikipedia.org/wiki/Foreshadowing>
 [^fuckedup]: <https://knowyourmeme.com/memes/it-was-at-this-moment-he-knew-he-fucked-up>
 [^probably]: Probably more, or maybe less.
-[^rtfm]: I figured out that PCI_E1 (topmost slot) is directly connected to the processor, while PCI_E2, PCI_E3, and PCI_E4 (bottom slots) go through the chipset, which puts them into the same IOMMU group as too many other devices. This is only **hinted at** on PAGE SIXTEEN of [the manual](https://download-2.msi.com/archive/mnu_exe/mb/MAGB550TOMAHAWK.pdf), AND you need know what you're looking for! Dammit MSI, do better, this was painful!
+[^rtfm]: I figured out that `PCI_E1` (topmost slot) is directly connected to the processor, while `PCI_E2`, `PCI_E3`, and `PCI_E4` (bottom slots) go through the chipset, which puts them into the same IOMMU group as too many other devices. This is only **hinted at** on PAGE SIXTEEN of [the manual](https://download-2.msi.com/archive/mnu_exe/mb/MAGB550TOMAHAWK.pdf), AND you need know what you're looking for! Dammit MSI, do better, this was painful!
 [^spinningrust]: and yes, I know that these are four "spinning rust" drives and they will probably never see anywhere near 6Gbps, lest they take off like a frenzied helicopter, but I'm not risking it. I want the full bandwidth available.
 [^latex]: I'm not adding LaTeX support to Hugo just to show multiplication, sorry.
+[^bracket]: <https://www.thingiverse.com/thing:6430890>

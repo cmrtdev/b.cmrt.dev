@@ -1,0 +1,9 @@
+<model-viewer
+    alt="{{ .Get "alt" | relURL }}"
+    src="{{ .Get "src" | relURL }}"
+    shadow-intensity="1"
+    camera-controls
+    touch-action="pan-y"
+    ar-modes="webxr scene-viewer quick-look"
+    {{ if isset .Params "orbit" }}camera-orbit="{{- .Params.orbit -}}"{{ end }}>
+</model-viewer>
